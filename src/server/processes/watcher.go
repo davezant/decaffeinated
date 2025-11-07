@@ -1,0 +1,81 @@
+package processes
+
+import (
+	"log"
+	"time"
+
+	"github.com/davezant/decafein/src/server/tempo"
+)
+
+var LocalWatcher = NewWatcher(CommonBucket, CommonRegistry, CurrentSession)
+
+type Watcher struct {
+	ProcessesBucket      *ProcessesBucket
+	ActivitiesUp         *ActivitiesRegistry
+	ActiveSession        *Session
+	ServiceStartTime     time.Time
+	SessionExecutionTime string
+	overlayTimer         *tempo.SimpleTimer
+}
+
+func NewWatcher(bucket *ProcessesBucket, soup *ActivitiesRegistry, session *Session) *Watcher {
+	return &Watcher{
+		ProcessesBucket:      bucket,
+		ActivitiesUp:         soup,
+		ActiveSession:        session,
+		ServiceStartTime:     time.Now(),
+		SessionExecutionTime: "",
+		overlayTimer:         tempo.NewSimpleTimer(),
+	}
+}
+
+func (w *Watcher) Start() {
+	w.overlayTimer.Start(time.Second, func() {
+
+		if w.ActiveSession == nil {
+			return
+		}
+
+		elapsed := time.Since(w.ServiceStartTime).Truncate(time.Second)
+		w.SessionExecutionTime = elapsed.String()
+
+		if w.ActiveSession.Expired() {
+			log.Printf("[INFO] Sessão expirada para user %s, deslogando.", w.ActiveSession.UserID)
+			w.Logout()
+		}
+	})
+}
+
+func (w *Watcher) Login(sess *Session) {
+	w.ActiveSession = sess
+	w.ServiceStartTime = time.Now()
+	log.Printf("[INFO] Sessão iniciada para %s", sess.UserID)
+}
+
+func (w *Watcher) Logout() {
+	if w.ActiveSession != nil {
+		log.Printf("[INFO] Sessão finalizada para %s", w.ActiveSession.UserID)
+		w.ActiveSession = nil
+	}
+}
+
+func (w *Watcher) RegisterActivity(a *Activity) {
+	log.Printf("[INFO] watcher: '%s' registered", a.Name)
+	w.ActivitiesUp.Active = append(w.ActivitiesUp.Active, a)
+}
+
+func (w *Watcher) RemoveActivity(a *Activity) {
+	filtered := []*Activity{}
+	for _, act := range w.ActivitiesUp.Active {
+		if act.Name != a.Name {
+			filtered = append(filtered, act)
+		} else {
+			log.Printf("[INFO] watcher: popped activity '%s'", a.Name)
+		}
+	}
+	w.ActivitiesUp.Active = filtered
+}
+
+func (w *Watcher) KillActivity(a *Activity) {
+	// implementar se necessário
+}
