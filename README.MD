@@ -2,7 +2,9 @@
 
 Decafein is a lightweight time-management system written in Go.  
 It monitors application usage, manages user sessions, and can optionally block websites.
+
 [](https://img.shields.io/badge/Apache--2.0-green?style=for-the-badge) 
+
 ### What it does
 - Tracks running applications and how long they stay active  
 - Supports per-user sessions (shared machines)
