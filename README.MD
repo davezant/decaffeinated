@@ -1,22 +1,18 @@
-# Decafein — Open-Source Productivity Firewall & Intercepting Proxy
+# Decafein
 
-![](https://img.shields.io/badge/Apache--2.0-green?style=for-the-badge)
+Decafein is a lightweight time-management system written in Go.  
+It monitors application usage, manages user sessions, and can optionally block websites.
 
-Decafein is an open-source proxy firewall built in Go, designed to improve productivity by blocking distracting or harmful websites before they ever reach the computer.  
-It can intercept **HTTP and HTTPS**, apply custom rules, register activities, and integrate with user/session control systems.
+### What it does
+- Tracks running applications and how long they stay active  
+- Supports per-user sessions (shared machines)
+- Optional website blocking for productivity or parental control
 
-## ✅ Features
-✔ Intercepts HTTP and HTTPS traffic  
-✔ Detects and blocks blacklisted domains instantly  
-✔ Logs every intercepted connection  
-✔ Written in pure Go — no external dependencies  
-✔ Easily extendable (user groups, session control, timers, web dashboard, etc.)
+### Where it can be used
+- Schools and universities  
+- Cybercafés / LAN houses  
+- Shared family computers  
+- Parents limiting screen time  
+- Personal productivity setups  
 
----
-
-## 🚀 Installation
-
-```bash
-git clone https://github.com/davezant/decafein
-cd decafein
-go build
+Project is still in early development.
