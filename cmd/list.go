@@ -1,28 +1,37 @@
-/*
-Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
-*/
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/davezant/decafein/src/client/webclient"
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "List resources from the server",
 }
 
 var listApps = &cobra.Command{
 	Use:   "apps",
 	Short: "List apps being watched",
 	Run: func(cmd *cobra.Command, args []string) {
+		client := webclient.New("http://localhost:1337")
+
+		apps, err := client.GetApps()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		if len(apps) == 0 {
+			fmt.Println("No apps found.")
+			return
+		}
+
+		for _, app := range apps {
+			fmt.Printf("- %s (%s)\n", app.Name, app.Binary)
+		}
 	},
 }
 

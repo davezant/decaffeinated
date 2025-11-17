@@ -7,29 +7,29 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 )
 
-type ProcessesBucket struct {
-	ProcessesStrings []string
+type ProcessesSnapshot struct {
+	Processes []string
 }
 
-var CommonBucket = NewProcessesBucket()
+var GlobalSnapshot = NewProcessesSnapshot()
 
-func NewProcessesBucket() *ProcessesBucket {
-	return &ProcessesBucket{}
+func NewProcessesSnapshot() *ProcessesSnapshot {
+	return &ProcessesSnapshot{}
 }
 
-func StartGlobalBucketUpdater() {
+func StartGlobalSnapshotUpdater() {
 	log.Printf("[INFO] bucket: Starting global processes bucket updater")
 	go func() {
 		for {
-			CommonBucket.UpdateBucket()
+			GlobalSnapshot.UpdateSnapshot()
 			time.Sleep(Timeout)
 		}
 	}()
 }
 
-func (p *ProcessesBucket) UpdateBucket() {
+func (p *ProcessesSnapshot) UpdateSnapshot() {
 	log.Printf("[DEBUG] bucket: Updating processes bucket")
-	p.ProcessesStrings = nil
+	p.Processes = nil
 
 	rawBucket, err := process.Processes()
 	if err == process.ErrorNotPermitted {
@@ -40,11 +40,11 @@ func (p *ProcessesBucket) UpdateBucket() {
 	for _, proc := range rawBucket {
 		name, err := proc.Name()
 		if err == nil {
-			p.ProcessesStrings = append(p.ProcessesStrings, name)
+			p.Processes = append(p.Processes, name)
 		}
 	}
 
-	if len(p.ProcessesStrings) == 0 {
+	if len(p.Processes) == 0 {
 		log.Fatalf("[FATAL] bucket: No processes captured: insufficient permissions")
 	}
 }

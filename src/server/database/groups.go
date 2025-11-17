@@ -16,7 +16,7 @@ func newGroup(name string) *Group {
 	}
 }
 
-var Unlisted = newGroup("unlisted_apps")
+var Unlisted = newGroup("unlistedApps")
 
 func (g *Group) AddToGroup(app *App) {
 	if g.Apps == nil {
@@ -41,4 +41,9 @@ func CreateGroup(name string) *Group {
 
 func AddTimeLimitToGroup(group *Group, limit time.Duration) {
 	group.TimeLimit = limit
+}
+
+type GroupsBucket struct {
+	UserCreated  *userCreatedAppGroups
+	UnlistedApps Group
 }

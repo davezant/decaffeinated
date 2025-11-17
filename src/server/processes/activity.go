@@ -11,12 +11,13 @@ import (
 var Timeout = 5 * time.Second
 
 type Activity struct {
-	Name            string
-	ExecutionBinary string
-	IsUp            bool
-
-	executionTime        time.Duration
+	Name                 string
+	ExecutionBinary      string
+	IsUp                 bool
+	Limit                time.Duration
 	DisplayExecutionTime string
+	IsCounting           bool
+	executionTime        time.Duration
 	timer                *tempo.SimpleTimer
 }
 
@@ -27,14 +28,15 @@ func NewActivity(name, processBinary string) *Activity {
 		ExecutionBinary:      processBinary,
 		IsUp:                 false,
 		executionTime:        time.Duration(time.Duration.Seconds(0)),
+		IsCounting:           true,
 		DisplayExecutionTime: "",
 		timer:                tempo.NewSimpleTimer(),
 	}
 }
 
 func (a *Activity) CheckIsRunning() bool {
-	CommonBucket.UpdateBucket()
-	for _, processName := range CommonBucket.ProcessesStrings {
+	GlobalSnapshot.UpdateSnapshot()
+	for _, processName := range GlobalSnapshot.Processes {
 		if utils.EqualIgnoreCase(processName, a.ExecutionBinary) {
 			return true
 		}
@@ -43,42 +45,46 @@ func (a *Activity) CheckIsRunning() bool {
 }
 
 func (a *Activity) Up() {
-	a.IsUp = true
-	log.Println("[DEBUG] activity: '" + a.Name + "' UP")
+	if a.IsCounting {
+		a.IsUp = true
+		log.Println("[DEBUG] activity: '" + a.Name + "' UP")
 
-	a.timer.Start(1*time.Second, func() {
-		if a.IsUp {
-			a.executionTime += 1 * time.Second
-			a.DisplayExecutionTime = a.executionTime.String()
-		}
-	})
+		a.timer.Start(1*time.Second, func() {
+			if a.IsUp {
+				a.executionTime += 1 * time.Second
+				a.DisplayExecutionTime = a.executionTime.String()
+			}
+		})
 
-	go tempo.TickerTimer(
-		Timeout,
-		func() bool {
-			return !a.CheckIsRunning()
-		},
-		func() {
-			a.IsUp = false
-			a.Down()
-		},
-	)
+		go tempo.TickerTimer(
+			Timeout,
+			func() bool {
+				return !a.CheckIsRunning()
+			},
+			func() {
+				a.IsUp = false
+				a.Down()
+			},
+		)
+	}
 }
 
 func (a *Activity) Down() {
-	a.IsUp = false
-	a.timer.Stop()
+	if a.IsCounting {
+		a.IsUp = false
+		a.timer.Stop()
 
-	log.Println("[DEBUG] activity: '" + a.Name + "' DOWN")
+		log.Println("[DEBUG] activity: '" + a.Name + "' DOWN")
 
-	go tempo.TickerTimer(
-		Timeout,
-		func() bool {
-			return a.CheckIsRunning()
-		},
-		func() {
-			a.IsUp = true
-			a.Up()
-		},
-	)
+		go tempo.TickerTimer(
+			Timeout,
+			func() bool {
+				return a.CheckIsRunning()
+			},
+			func() {
+				a.IsUp = true
+				a.Up()
+			},
+		)
+	}
 }

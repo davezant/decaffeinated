@@ -7,10 +7,10 @@ import (
 	"github.com/davezant/decafein/src/server/tempo"
 )
 
-var LocalWatcher = NewWatcher(CommonBucket, CommonRegistry, CurrentSession)
+var GlobalWatcher = NewWatcher(GlobalSnapshot, GlobalRegistry, CurrentSession)
 
 type Watcher struct {
-	ProcessesBucket      *ProcessesBucket
+	ProcessesSnapshot    *ProcessesSnapshot
 	ActivitiesUp         *ActivitiesRegistry
 	ActiveSession        *Session
 	ServiceStartTime     time.Time
@@ -18,9 +18,9 @@ type Watcher struct {
 	overlayTimer         *tempo.SimpleTimer
 }
 
-func NewWatcher(bucket *ProcessesBucket, soup *ActivitiesRegistry, session *Session) *Watcher {
+func NewWatcher(bucket *ProcessesSnapshot, soup *ActivitiesRegistry, session *Session) *Watcher {
 	return &Watcher{
-		ProcessesBucket:      bucket,
+		ProcessesSnapshot:    bucket,
 		ActivitiesUp:         soup,
 		ActiveSession:        session,
 		ServiceStartTime:     time.Now(),
@@ -31,7 +31,7 @@ func NewWatcher(bucket *ProcessesBucket, soup *ActivitiesRegistry, session *Sess
 
 func (w *Watcher) Start() {
 	w.overlayTimer.Start(time.Second, func() {
-		w.ProcessesBucket.UpdateBucket()
+		w.ProcessesSnapshot.UpdateSnapshot()
 		if w.ActiveSession == nil {
 			return
 		}

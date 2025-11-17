@@ -5,12 +5,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/davezant/decafein/src/server/database"
 	"github.com/davezant/decafein/src/server/processes"
 )
 
-var watch = processes.LocalWatcher
+var watch = processes.GlobalWatcher
 
 func respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -43,18 +44,19 @@ func AppsHandler(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, database.Unlisted.Apps)
 	case http.MethodPost:
 		var data struct {
-			Name          string `json:"name"`
-			Binary        string `json:"binary"`
-			Path          string `json:"path"`
-			CommandPrefix string `json:"command_prefix"`
-			CommandSuffix string `json:"command_suffix"`
-			CanMinorsPlay bool   `json:"can_minors_play"`
+			Name          string        `json:"name"`
+			Binary        string        `json:"binary"`
+			Path          string        `json:"path"`
+			Limit         time.Duration `json:"limit"`
+			CommandPrefix string        `json:"command_prefix"`
+			CommandSuffix string        `json:"command_suffix"`
+			CanMinorsPlay bool          `json:"can_minors_play"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		app := database.CreateApp(data.Name, data.Binary, data.Path, data.CommandPrefix, data.CommandSuffix, data.CanMinorsPlay)
+		app := database.CreateApp(data.Name, data.Binary, data.Path, data.CommandPrefix, data.CommandSuffix, data.CanMinorsPlay, data.Limit)
 		respondJSON(w, app)
 	case http.MethodDelete:
 		name := strings.TrimPrefix(r.URL.Path, "/apps/")
@@ -171,7 +173,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	processes.CurrentSession = session
-	processes.LocalWatcher.Login(session)
+	processes.GlobalWatcher.Login(session)
 	respondJSON(w, session)
 }
 

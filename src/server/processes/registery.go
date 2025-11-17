@@ -5,7 +5,7 @@ type ActivitiesRegistry struct {
 	Inactive []*Activity
 }
 
-var CommonRegistry = NewActivitiesRegistry()
+var GlobalRegistry = NewActivitiesRegistry()
 
 func NewActivitiesRegistry() *ActivitiesRegistry {
 	return &ActivitiesRegistry{
@@ -22,7 +22,7 @@ func (r *ActivitiesRegistry) DisableApp(a *Activity) {
 		}
 	}
 	r.Active = newActive
-
+	a.IsCounting = false
 	r.Inactive = append(r.Inactive, a)
 }
 
@@ -34,6 +34,10 @@ func (r *ActivitiesRegistry) ActivateApp(a *Activity) {
 		}
 	}
 	r.Inactive = newInactive
-
+	a.IsCounting = true
 	r.Active = append(r.Active, a)
+}
+
+func (r *ActivitiesRegistry) ApplyRules(a *Activity) {
+
 }

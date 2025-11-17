@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"github.com/davezant/decafein/src/server/processes"
 )
@@ -19,8 +20,9 @@ type App struct {
 	CanMinorsPlay bool
 }
 
-func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinorsPlay bool) App {
+func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinorsPlay bool, limit time.Duration) App {
 	activity := processes.NewActivity(name, binary)
+	activity.Limit = limit
 
 	application := App{
 		Name:              name,
@@ -33,7 +35,7 @@ func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinor
 	}
 
 	application.EnterInGroup(Unlisted)
-	processes.LocalWatcher.RegisterActivity(application.Activity)
+	processes.GlobalWatcher.RegisterActivity(application.Activity)
 	log.Println("[INFO] database: Creating process named '" + activity.Name + "' Executable : '" + activity.ExecutionBinary + "'")
 
 	if activity.CheckIsRunning() {
@@ -50,8 +52,12 @@ func (application *App) EnterInGroup(group *Group) {
 }
 
 func (application *App) Remove() {
-	processes.LocalWatcher.RemoveActivity(application.Activity)
+	processes.GlobalWatcher.RemoveActivity(application.Activity)
 	log.Println("[INFO] database: Removing process named '" + application.Name + "'")
 	application.Activity = nil
 	application = nil
+}
+
+func UpdateRunningBinaryByGui() {
+
 }
