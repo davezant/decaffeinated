@@ -1,3 +1,6 @@
+/*
+Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
+*/
 package cmd
 
 import (

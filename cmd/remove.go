@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 Davezant
+Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
 */
 package cmd
 
@@ -37,6 +37,8 @@ var removeAppCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(removeCmd)
-	removeCmd.AddCommand(removeAppCmd)
+	if globalFlags.IsAdmin {
+		rootCmd.AddCommand(removeCmd)
+		removeCmd.AddCommand(removeAppCmd)
+	}
 }

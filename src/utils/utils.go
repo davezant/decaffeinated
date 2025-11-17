@@ -34,3 +34,7 @@ func DoesExecutableExist(path, executable string) bool {
 func EqualIgnoreCase(a, b string) bool {
 	return strings.EqualFold(a, b)
 }
+
+func CreateNotification() {
+
+}

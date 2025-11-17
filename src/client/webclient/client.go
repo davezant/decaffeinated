@@ -22,7 +22,7 @@ func New(baseURL string) *Client {
 func (c *Client) get(path string, out interface{}) error {
 	resp, err := c.Client.Get(c.BaseURL + path)
 	if err != nil {
-		return err
+		return fmt.Errorf("server not reachable, is it running?\n%w", err)
 	}
 	defer resp.Body.Close()
 

@@ -2,12 +2,6 @@ package database
 
 import "time"
 
-type Group struct {
-	GroupName string        `json:"groupName"`
-	Apps      []App         `json:"apps"`
-	TimeLimit time.Duration `json:"timeLimit"`
-}
-
 func newGroup(name string) *Group {
 	// Garante que Apps nunca é nil
 	return &Group{
@@ -46,4 +40,7 @@ func AddTimeLimitToGroup(group *Group, limit time.Duration) {
 type GroupsBucket struct {
 	UserCreated  *userCreatedAppGroups
 	UnlistedApps Group
+}
+
+func LoadDatabaseGroups() {
 }

@@ -3,13 +3,6 @@ package processes
 
 import "time"
 
-type Session struct {
-	UserID    string
-	LoginTime time.Time
-	Limit     time.Duration
-	IsMinor   bool
-}
-
 var CurrentSession = newSession()
 
 func newSession() *Session {

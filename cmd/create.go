@@ -1,3 +1,6 @@
+/*
+Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
+*/
 package cmd
 
 import (
@@ -44,19 +47,19 @@ var createAppCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(createCmd)
-	createCmd.AddCommand(createAppCmd)
+	if globalFlags.IsAdmin {
+		rootCmd.AddCommand(createCmd)
+		createCmd.AddCommand(createAppCmd)
 
-	// flags for create app
-	createAppCmd.Flags().StringVar(&createName, "name", "", "App name (required)")
-	createAppCmd.Flags().StringVar(&createBinary, "binary", "", "Binary filename (required)")
-	createAppCmd.Flags().StringVar(&createPath, "path", "", "Binary root path")
-	createAppCmd.Flags().StringVar(&createPrefix, "prefix", "", "Command line prefix")
-	createAppCmd.Flags().StringVar(&createSuffix, "suffix", "", "Command line suffix")
-	createAppCmd.Flags().DurationVar(&createLimit, "limit", 0, "Time limit for the app (e.g. 2h, 30m)")
-	createAppCmd.Flags().BoolVar(&createMinors, "minors", false, "Allow minors to play this app")
+		createAppCmd.Flags().StringVar(&createName, "name", "", "App name (required)")
+		createAppCmd.Flags().StringVar(&createBinary, "binary", "", "Binary filename (required)")
+		createAppCmd.Flags().StringVar(&createPath, "path", "", "Binary root path")
+		createAppCmd.Flags().StringVar(&createPrefix, "prefix", "", "Command line prefix")
+		createAppCmd.Flags().StringVar(&createSuffix, "suffix", "", "Command line suffix")
+		createAppCmd.Flags().DurationVar(&createLimit, "limit", 0, "Time limit for the app (e.g. 2h, 30m)")
+		createAppCmd.Flags().BoolVar(&createMinors, "minors", false, "Allow minors to play this app")
 
-	// mark required flags
-	createAppCmd.MarkFlagRequired("name")
-	createAppCmd.MarkFlagRequired("binary")
+		createAppCmd.MarkFlagRequired("name")
+		createAppCmd.MarkFlagRequired("binary")
+	}
 }

@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 Davezant
+Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
 */
 package cmd
 

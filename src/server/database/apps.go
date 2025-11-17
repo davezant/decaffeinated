@@ -7,19 +7,6 @@ import (
 	"github.com/davezant/decafein/src/server/processes"
 )
 
-type App struct {
-	Name string
-
-	RootBinaryPath string
-	BinaryName     string
-
-	commandLinePrefix string
-	commandLineSuffix string
-
-	Activity      *processes.Activity
-	CanMinorsPlay bool
-}
-
 func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinorsPlay bool, limit time.Duration) App {
 	activity := processes.NewActivity(name, binary)
 	activity.Limit = limit
@@ -56,8 +43,4 @@ func (application *App) Remove() {
 	log.Println("[INFO] database: Removing process named '" + application.Name + "'")
 	application.Activity = nil
 	application = nil
-}
-
-func UpdateRunningBinaryByGui() {
-
 }

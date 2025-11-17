@@ -8,23 +8,3 @@ func InitDB(db *sql.DB) error {
 func CreateDB() {
 
 }
-
-/*
-func (application *App) RecordInDatabase() {}
-
-func (application *App) UpdateInDatabase() {}
-
-func (application *App) DeleteFromDatabase() {}
-
-func (application *Group) RecordInDatabase() {}
-
-func (application *Group) UpdateInDatabase() {}
-
-func (application *Group) DeleteFromDatabase() {}
-
-func (application *User) RecordInDatabase() {}
-
-func (application *User) UpdateInDatabase() {}
-
-func (application *User) DeleteFromDatabase() {}
-*/

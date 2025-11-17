@@ -1,10 +1,5 @@
 package processes
 
-type ActivitiesRegistry struct {
-	Active   []*Activity
-	Inactive []*Activity
-}
-
 var GlobalRegistry = NewActivitiesRegistry()
 
 func NewActivitiesRegistry() *ActivitiesRegistry {

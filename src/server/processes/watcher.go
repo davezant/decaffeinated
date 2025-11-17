@@ -9,15 +9,6 @@ import (
 
 var GlobalWatcher = NewWatcher(GlobalSnapshot, GlobalRegistry, CurrentSession)
 
-type Watcher struct {
-	ProcessesSnapshot    *ProcessesSnapshot
-	ActivitiesUp         *ActivitiesRegistry
-	ActiveSession        *Session
-	ServiceStartTime     time.Time
-	SessionExecutionTime string
-	overlayTimer         *tempo.SimpleTimer
-}
-
 func NewWatcher(bucket *ProcessesSnapshot, soup *ActivitiesRegistry, session *Session) *Watcher {
 	return &Watcher{
 		ProcessesSnapshot:    bucket,

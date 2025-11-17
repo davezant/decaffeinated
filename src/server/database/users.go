@@ -8,17 +8,6 @@ import (
 	"github.com/davezant/decafein/src/server/processes"
 )
 
-type User struct {
-	Name           string
-	Password       string
-	LastLogged     time.Time
-	TimeWasted     time.Duration
-	TimeUntilReset time.Duration
-
-	isLogged bool
-	Session  *processes.Session
-}
-
 func NewUser(name, password string) User {
 	return User{Name: name, Password: password}
 }
@@ -48,4 +37,8 @@ func (u *User) Logoff() {
 
 	u.Session = nil
 	u.isLogged = false
+}
+
+func LoadDatabaseUsers() {
+
 }

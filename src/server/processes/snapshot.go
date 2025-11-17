@@ -7,10 +7,6 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 )
 
-type ProcessesSnapshot struct {
-	Processes []string
-}
-
 var GlobalSnapshot = NewProcessesSnapshot()
 
 func NewProcessesSnapshot() *ProcessesSnapshot {

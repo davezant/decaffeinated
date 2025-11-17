@@ -10,17 +10,6 @@ import (
 
 var Timeout = 5 * time.Second
 
-type Activity struct {
-	Name                 string
-	ExecutionBinary      string
-	IsUp                 bool
-	Limit                time.Duration
-	DisplayExecutionTime string
-	IsCounting           bool
-	executionTime        time.Duration
-	timer                *tempo.SimpleTimer
-}
-
 func NewActivity(name, processBinary string) *Activity {
 	log.Println("[INFO] activity: Registering new activity - '" + name + "'")
 	return &Activity{
