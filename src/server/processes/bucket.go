@@ -33,7 +33,7 @@ func (p *ProcessesBucket) UpdateBucket() {
 
 	rawBucket, err := process.Processes()
 	if err == process.ErrorNotPermitted {
-		log.Printf("[ERROR] bucket: Permission denied: run Decafein as administrator or with sudo")
+		log.Printf("[ERROR] bucket: Permission denied: try run Decafein as administrator or with sudo")
 		return
 	}
 

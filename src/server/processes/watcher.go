@@ -31,7 +31,7 @@ func NewWatcher(bucket *ProcessesBucket, soup *ActivitiesRegistry, session *Sess
 
 func (w *Watcher) Start() {
 	w.overlayTimer.Start(time.Second, func() {
-
+		w.ProcessesBucket.UpdateBucket()
 		if w.ActiveSession == nil {
 			return
 		}

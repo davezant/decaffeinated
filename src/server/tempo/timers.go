@@ -28,7 +28,6 @@ func NewSimpleTimer() *SimpleTimer {
 }
 
 func (t *SimpleTimer) Start(interval time.Duration, onTick func()) {
-	// já está rodando? não inicia de novo
 	if t.isRunning {
 		return
 	}
