@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/davezant/decafein/src/server/tempo"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 var GlobalWatcher = NewWatcher(GlobalSnapshot, GlobalRegistry, CurrentSession)
@@ -68,5 +69,29 @@ func (w *Watcher) RemoveActivity(a *Activity) {
 }
 
 func (w *Watcher) KillActivity(a *Activity) {
-	// implementar se necessário
+	if a == nil {
+		return
+	}
+
+	proc, err := process.NewProcess(a.Pid)
+	if err != nil {
+		log.Printf("[ERROR] watcher: cannot find process %d for '%s': %v", a.Pid, a.Name, err)
+		return
+	}
+
+	// Tenta matar com Terminate primeiro (mais amigável)
+	if err := proc.Terminate(); err != nil {
+		log.Printf("[WARN] watcher: terminate failed for '%s' (%d): %v", a.Name, a.Pid, err)
+
+		// Se falhar, tenta Kill (SIGKILL)
+		if err := proc.Kill(); err != nil {
+			log.Printf("[ERROR] watcher: kill failed for '%s' (%d): %v", a.Name, a.Pid, err)
+			return
+		}
+	}
+
+	log.Printf("[INFO] watcher: activity '%s' (pid %d) terminated", a.Name, a.Pid)
+
+	// Remove da lista
+	w.RemoveActivity(a)
 }

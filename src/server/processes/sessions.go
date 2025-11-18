@@ -1,4 +1,3 @@
-// processes/session.go
 package processes
 
 import "time"
@@ -21,8 +20,8 @@ func (s *Session) Remaining() time.Duration {
 
 func (s *Session) Expired() bool {
 	if s.Limit == 0 {
-		return false
 		s.OnEnding()
+		return false
 	}
 	return s.Elapsed() >= s.Limit
 }

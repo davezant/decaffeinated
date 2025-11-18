@@ -12,9 +12,11 @@ import (
 )
 
 type Flags struct {
-	AdminToken  string
+	AdminToken string
+
 	VerboseMode bool
 	IsAdmin     bool
+	AllowsX11   bool
 }
 
 var globalFlags = Flags{

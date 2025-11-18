@@ -6,6 +6,9 @@ import (
 	"github.com/gen2brain/beeep"
 )
 
+func init() {
+	beeep.AppName = "Decaffeinated"
+}
 func PrintPassedTime(aplicationName string) {
 	fmt.Println("[POLICIES]	the application", aplicationName, "has exceeded the allowed execution time limit.")
 }

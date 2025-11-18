@@ -2,23 +2,22 @@ package database
 
 import (
 	"log"
-	"time"
 
 	"github.com/davezant/decafein/src/server/processes"
 )
 
-func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinorsPlay bool, limit time.Duration) App {
-	activity := processes.NewActivity(name, binary)
-	activity.Limit = limit
+func CreateApp(a *AppConfig) App {
+	activity := processes.NewActivity(a.Name, a.BinaryInProcess)
+	activity.Limit = a.MainGroupPolicy.Limit
 
 	application := App{
-		Name:              name,
-		RootBinaryPath:    path,
-		BinaryName:        binary,
-		commandLinePrefix: commandPrefix,
-		commandLineSuffix: commandSuffix,
+		Name:              a.Name,
+		RootBinaryPath:    a.Path,
+		BinaryName:        a.BinaryInPath,
+		commandLinePrefix: a.PrefixCommand,
+		commandLineSuffix: a.SuffixComand,
 		Activity:          activity,
-		CanMinorsPlay:     canMinorsPlay,
+		CanMinorsPlay:     a.AllowMinors,
 	}
 
 	application.EnterInGroup(Unlisted)
@@ -35,6 +34,7 @@ func CreateApp(name, binary, path, commandPrefix, commandSuffix string, canMinor
 }
 
 func (application *App) EnterInGroup(group *Group) {
+	application.Activity.Limit = group.Policy.Limit
 	group.AddToGroup(application)
 }
 

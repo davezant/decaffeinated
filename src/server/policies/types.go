@@ -25,3 +25,8 @@ type Restriction struct {
 	Policy
 	BlockNetwork bool
 }
+
+type Action struct {
+	Percentage float32
+	Callback   func()
+}

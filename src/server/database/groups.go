@@ -3,14 +3,13 @@ package database
 import "time"
 
 func newGroup(name string) *Group {
-	// Garante que Apps nunca é nil
 	return &Group{
 		GroupName: name,
 		Apps:      []App{},
 	}
 }
 
-var Unlisted = newGroup("unlistedApps")
+var Unlisted = newGroup("UnlistedApps")
 
 func (g *Group) AddToGroup(app *App) {
 	if g.Apps == nil {
@@ -34,10 +33,10 @@ func CreateGroup(name string) *Group {
 }
 
 func AddTimeLimitToGroup(group *Group, limit time.Duration) {
-	group.TimeLimit = limit
+	group.Policy.Limit = limit
 }
 
-type GroupsBucket struct {
+type Groups struct {
 	UserCreated  *userCreatedAppGroups
 	UnlistedApps Group
 }

@@ -13,6 +13,8 @@ import (
 
 var watch = processes.GlobalWatcher
 
+const initialSecret = "iamasecret"
+
 func respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
@@ -56,7 +58,7 @@ func AppsHandler(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		app := database.CreateApp(data.Name, data.Binary, data.Path, data.CommandPrefix, data.CommandSuffix, data.CanMinorsPlay, data.Limit)
+		app := database.CreateApp(database.NewCompleteAppConfig(data.Name, data.Binary, "", data.Path, data.CommandPrefix, data.CommandSuffix, data.CanMinorsPlay))
 		respondJSON(w, app)
 	case http.MethodDelete:
 		name := strings.TrimPrefix(r.URL.Path, "/apps/")

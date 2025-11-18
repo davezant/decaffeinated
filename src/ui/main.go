@@ -1,4 +1,4 @@
-package clientui
+package ui
 
 type WindowUI struct {
 	Title  string
