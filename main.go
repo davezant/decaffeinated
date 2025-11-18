@@ -4,7 +4,7 @@ Copyright © 2025 davezant
 package main
 
 import (
-	"github.com/davezant/decafein/cmd"
+	cmd "github.com/davezant/decafein/cmd/decaffeinated"
 )
 
 func main() {
