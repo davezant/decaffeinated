@@ -4,8 +4,10 @@ Copyright © 2025 Davezant <dsndeividdsn1@gmail.com>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/davezant/decafein/src/client/webclient"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +18,7 @@ type Flags struct {
 }
 
 var globalFlags = Flags{
-	IsAdmin:     false,
+	IsAdmin:     true,
 	VerboseMode: false,
 }
 
@@ -34,6 +36,13 @@ to quickly create a Cobra application.`,
 
 func Execute() {
 	err := rootCmd.Execute()
+	_, netErr := webclient.New("http://localhost:1337").GetWatcher()
+
+	if netErr != nil {
+		fmt.Println("Server OFFLINE")
+	} else {
+		fmt.Println("Server ONLINE")
+	}
 	if err != nil {
 		os.Exit(1)
 	}

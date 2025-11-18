@@ -14,7 +14,7 @@ func NewProcessesSnapshot() *ProcessesSnapshot {
 }
 
 func StartGlobalSnapshotUpdater() {
-	log.Printf("[INFO] bucket: Starting global processes bucket updater")
+	log.Printf("[INFO] snapshot: Starting global snapshot updater")
 	go func() {
 		for {
 			GlobalSnapshot.UpdateSnapshot()
@@ -24,12 +24,12 @@ func StartGlobalSnapshotUpdater() {
 }
 
 func (p *ProcessesSnapshot) UpdateSnapshot() {
-	log.Printf("[DEBUG] bucket: Updating processes bucket")
+	log.Printf("[DEBUG] snapshot: Updating snapshot")
 	p.Processes = nil
 
 	rawBucket, err := process.Processes()
 	if err == process.ErrorNotPermitted {
-		log.Printf("[ERROR] bucket: Permission denied: try run Decafein as administrator or with sudo")
+		log.Printf("[ERROR] snapshot: Permission denied: try run Decafein as administrator or with sudo")
 		return
 	}
 
@@ -41,6 +41,6 @@ func (p *ProcessesSnapshot) UpdateSnapshot() {
 	}
 
 	if len(p.Processes) == 0 {
-		log.Fatalf("[FATAL] bucket: No processes captured: insufficient permissions")
+		log.Fatalf("[FATAL] snapshot: No processes captured: insufficient permissions")
 	}
 }

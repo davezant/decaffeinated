@@ -1,19 +1,17 @@
-/*
-Copyright © 2025 davezant
-*/
 package main
 
 import (
 	"time"
 
 	"github.com/davezant/decafein/src/server/database"
-	"github.com/davezant/decafein/src/server/ui"
+	"github.com/davezant/decafein/src/server/processes"
 	"github.com/davezant/decafein/src/server/webserver"
 )
 
 func main() {
-	minecraft := database.CreateApp("Minecraft", "tlauncher.jar", "./", "", "", true, 2*time.Hour)
-	ui.UpdateRunningBinaryByGui(minecraft.Activity)
+	database.CreateApp("opera", "opera.exe", "", "", "", true, 2*time.Minute)
+	user := database.NewUser("Deivid", "Santana")
+	sess, _ := user.Login("Santana")
+	processes.GlobalWatcher.Login(sess)
 	webserver.OpenServer("", true)
-	select {}
 }

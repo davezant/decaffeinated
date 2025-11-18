@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/davezant/decafein/src/server/policies"
 	"github.com/davezant/decafein/src/server/tempo"
 	"github.com/davezant/decafein/src/utils"
 )
@@ -19,8 +20,13 @@ func NewActivity(name, processBinary string) *Activity {
 		executionTime:        time.Duration(time.Duration.Seconds(0)),
 		IsCounting:           true,
 		DisplayExecutionTime: "",
+		limitPassed:          false,
 		timer:                tempo.NewSimpleTimer(),
+		onPassedLimit:        func() { policies.NotifyPassedTime(name) },
+		onAlmostEnding:       func() { policies.NotifyAlmostEndingTime(name) },
+		onHalf:               func() { policies.NotifyHalfTime(name) },
 	}
+
 }
 
 func (a *Activity) CheckIsRunning() bool {
@@ -39,9 +45,35 @@ func (a *Activity) Up() {
 		log.Println("[DEBUG] activity: '" + a.Name + "' UP")
 
 		a.timer.Start(1*time.Second, func() {
-			if a.IsUp {
-				a.executionTime += 1 * time.Second
-				a.DisplayExecutionTime = a.executionTime.String()
+			if !a.IsUp {
+				return
+			}
+
+			a.executionTime += 1 * time.Second
+			a.DisplayExecutionTime = a.executionTime.String()
+
+			if a.Limit > 0 {
+
+				half := a.Limit / 2
+				almost := a.Limit - (a.Limit / 10) // 90% do tempo
+
+				// --- METADE ---
+				if a.onHalf != nil && a.executionTime == half {
+					a.onHalf()
+				}
+
+				// --- QUASE ACABANDO (faltando 10%) ---
+				if a.onAlmostEnding != nil && a.executionTime == almost {
+					a.onAlmostEnding()
+				}
+
+				// --- PASSOU DO LIMITE ---
+				if !a.limitPassed && a.executionTime >= a.Limit {
+					a.limitPassed = true
+					if a.onPassedLimit != nil {
+						a.onPassedLimit()
+					}
+				}
 			}
 		})
 
@@ -76,4 +108,12 @@ func (a *Activity) Down() {
 			},
 		)
 	}
+}
+
+func (a *Activity) detectPassedTime() {
+
+}
+
+func (a *Activity) detectAgeDiff() {
+
 }

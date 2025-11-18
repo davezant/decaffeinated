@@ -9,12 +9,16 @@ import (
 type Activity struct {
 	Name                 string
 	ExecutionBinary      string
-	IsUp                 bool
-	Limit                time.Duration
 	DisplayExecutionTime string
+	IsUp                 bool
+	limitPassed          bool
 	IsCounting           bool
+	Limit                time.Duration
 	executionTime        time.Duration
 	timer                *tempo.SimpleTimer
+	onHalf               func()
+	onAlmostEnding       func()
+	onPassedLimit        func()
 }
 
 type ActivitiesRegistry struct {
@@ -24,9 +28,10 @@ type ActivitiesRegistry struct {
 
 type Session struct {
 	UserID    string
+	IsMinor   bool
 	LoginTime time.Time
 	Limit     time.Duration
-	IsMinor   bool
+	OnEnding  func()
 }
 
 type ProcessesSnapshot struct {

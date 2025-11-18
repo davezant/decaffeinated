@@ -22,6 +22,7 @@ func (s *Session) Remaining() time.Duration {
 func (s *Session) Expired() bool {
 	if s.Limit == 0 {
 		return false
+		s.OnEnding()
 	}
 	return s.Elapsed() >= s.Limit
 }

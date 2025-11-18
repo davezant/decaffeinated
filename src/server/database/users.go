@@ -20,8 +20,9 @@ func (u *User) Login(password string) (*processes.Session, error) {
 	u.Session = &processes.Session{
 		UserID:    u.Name,
 		LoginTime: time.Now(),
-		Limit:     time.Hour,
+		Limit:     time.Minute * 2,
 		IsMinor:   false,
+		OnEnding:  func() { fmt.Println("Ending Session") },
 	}
 
 	u.LastLogged = time.Now()
