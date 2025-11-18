@@ -47,6 +47,6 @@ Decafein is a small, efficient, and modular **time-management system** that trac
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourname/decafein
+git clone https://github.com/davezant/decafein
 cd decafein
 go build ./cmd/decafein
