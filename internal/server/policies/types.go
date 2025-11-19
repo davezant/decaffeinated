@@ -1,32 +1,19 @@
 package policies
 
+var DefaultPercentagesPolicies = []float32{0.5, 0.9, 1.0}
+
 type Policy struct {
-	ID      string
-	Message string
-	Active  bool
-}
-
-type Log struct {
-	Policy
-	Level string
-}
-
-type Warning struct {
-	Policy
-	Severity int
-}
-
-type Killer struct {
-	Policy
-	TargetProcess string
-}
-
-type Restriction struct {
-	Policy
-	BlockNetwork bool
+	ID         string
+	Message    string
+	Active     bool
+	Percentage []float32
+	Actions    []Action
 }
 
 type Action struct {
-	Percentage float32
-	Callback   func()
+	Callback func()
+}
+
+func NewPolicy(name string, percentages []float32) {
+
 }
