@@ -1,10 +1,9 @@
 package dfiles
 
 import (
-	"os"
 	"os/exec"
 )
-
-func RunProgram(){
-	
+// File Management
+func RunProgram(execPath string){
+	exec.Command(execPath)
 }

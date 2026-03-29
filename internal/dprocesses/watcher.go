@@ -9,19 +9,11 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 )
 
-type RuleMonitoring interface {
-
-}
-
-type ProcessManagement interface {
-
-}
+// Raw Process Management 
 
 type DProcess struct {
 	Name string
 	Filename string
-	
-	IsOn bool
 	OpenTime time.Time
 
 	context context.Context
@@ -32,32 +24,8 @@ type Monitor struct {
 	DProcesses []DProcess
 }
 
-type Rule struct {
-	TimeLimit time.Time
-	OpenLimit int
-	
-	OnOpenDo func()
-	OnHalfDo func()
-	OnCloseDo func()
-	OnEndDo func()
-}
-
-type AppRule struct {
-	Name string
-	Rule
-}
-
-type CategoryRule struct {
-	Name []string
-	Rule
-}
-
-type WatcherRules struct {
-	AppRules []AppRule
-	CategoryRules []CategoryRule
-}
-
 type Manager interface {
+	IncludeCurrentProcesses()
 	ManageApplications()
 }
 
@@ -74,7 +42,7 @@ func NewDProcess(name string, filename string) DProcess{
 	}
 }
 
-func (m Monitor) IncludeCurrentProcesses() error {
+func (m Monitor) RefreshCurrentProcesses() error {
 	ps, err := process.Processes()
 	log.Println(m.BootTime)
 	m.DProcesses = []DProcess{} 
@@ -106,17 +74,18 @@ func GetLiteralFromStruct(proc DProcess) (*process.Process, error) {
 	return nil, err
 }
 
-func SaveRunningState(proc DProcess) error{
+func GetState(proc DProcess) (bool, error) {
 	var err error
 	literal, err := GetLiteralFromStruct(proc)
 	if err != nil {
-		proc.IsOn, err = literal.IsRunning()
+		return literal.IsRunning()
 	}
-	return err
+	return false, err
 }
 
-func StartProcess(proc DProcess) {
-
+func MakeStateChannel(proc DProcess) (chan bool, error){
+	isRunning := make(chan bool)
+	return isRunning, nil
 }
 
 func KillProcesses(n []DProcess) {
@@ -132,26 +101,10 @@ func KillProcesses(n []DProcess) {
 func KillProcess(n DProcess) error{
 	p, err := GetLiteralFromStruct(n)
 	if err != nil{
-		log.Println("killed -", n.Name)
+		log.Println("killed - ", n.Name)
 		p.Kill()
 	}
 	return nil
 }
 
-func GetTimeRunnedFromProcess(){
 
-}
-
-/*
-func (m Monitor) 
-
-func (m Monitor) StartWatcher(rules WatcherRules){
-	err := m.IncludeCurrentProcesses()
-	// TODO Create Ticker
-	func (){
-		err0 := m.IncludeCurrentProcesses() 
-		for p := range m.DProcesses{
-			
-		}
-	}()
-}*/
