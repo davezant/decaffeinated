@@ -104,8 +104,22 @@ func (w *WatchDog) Start() {
 	}()
 }
 
-func (w *WatchDog) sendIPCResponse(c net.Conn, title string, message string){
+func (w *WatchDog) sendIPCResponse(c net.Conn, status string, message string) {
+	if c == nil {
+		return
+	}
 
+	resp := hlnet.IPCResponse{Status: status, Message: message}
+	payload, err := json.Marshal(resp)
+	if err != nil {
+		log.Println("sendIPCResponse marshal error:", err)
+		return
+	}
+
+	_, err = c.Write(payload)
+	if err != nil {
+		log.Println("sendIPCResponse write error:", err)
+	}
 }
 
 func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
