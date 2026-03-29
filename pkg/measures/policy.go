@@ -6,6 +6,7 @@ import (
 
 	"github.com/gen2brain/beeep"
 	"github.com/shirou/gopsutil/v4/process"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
 type BuiltinPunish interface{
@@ -26,7 +27,7 @@ func Warn(){
 
 func Notification(appName string, time time.Time) {
 	str := fmt.Sprintf("You are using %d for %t, Be careful!")
-	beeep.Notify(str)
+	beeep.Notify("Decaffeinated", str, icons.AVGames)
 }
 
 func Kill(pid int32) error{
