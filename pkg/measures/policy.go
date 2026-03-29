@@ -25,8 +25,8 @@ func Warn(){
 
 }
 
-func Notification(appName string, time time.Time) {
-	str := fmt.Sprintf("You are using %d for %t, Be careful!")
+func Notification(appName string, time time.Duration){
+	str := fmt.Sprintf("You are using %s for %d, Be careful!", appName, time)
 	beeep.Notify("Decaffeinated", str, icons.AVGames)
 }
 

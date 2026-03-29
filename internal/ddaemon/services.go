@@ -2,5 +2,22 @@ package ddaemon
 
 import "github.com/kardianos/service"
 
-func RunService (){	
+type DaemonManager interface {
+
+}
+
+func InstallService (){	
+
+}
+
+func UninstallService(){
+
+}
+
+func StartService(){
+
+}
+
+func StopService(){
+
 }
