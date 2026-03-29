@@ -4,8 +4,11 @@ import (
 	"decaffeinated/internal/dprocesses"
 	"decaffeinated/internal/dtime"
 	"decaffeinated/internal/hlnet"
+	"encoding/json"
 	"errors"
+	"io"
 	"log"
+	"net"
 	"sync"
 	"time"
 )
@@ -101,7 +104,11 @@ func (w *WatchDog) Start() {
 	}()
 }
 
-func (w *WatchDog) applyIPCCommand(cmd IPCCommand) error {
+func (w *WatchDog) sendIPCResponse(c net.Conn, title string, message string){
+
+}
+
+func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
 	if cmd.AppName == "" {
 		return errors.New("app_name is required")
 	}
@@ -151,7 +158,7 @@ func (w *WatchDog) handleIPCConn(c net.Conn) {
 		return
 	}
 
-	var cmd IPCCommand
+	var cmd hlnet.IPCCommand
 	if err := json.Unmarshal(body, &cmd); err != nil {
 		w.sendIPCResponse(c, "error", "invalid json")
 		return
