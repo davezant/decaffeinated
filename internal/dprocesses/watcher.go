@@ -41,56 +41,56 @@ func NewDProcess(name string, filename string) DProcess{
 	}
 }
 
-func (m *Monitor) RefreshCurrentProcesses() error {
+func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
     timeStart := time.Now()
     
     currentPs, err := process.Processes()
     if err != nil {
-        return err
+        return false, err
     }
 
     namesThisRun := make(map[string]bool)
     hasChanged := false
 
-	if len(currentPs) > m.RawLen + 4 || len(currentPs) < m.RawLen - 4{
-		m.RawLen = len(currentPs)
-    	fmt.Printf("Novo valor de RawLen %d", m.RawLen)
-		for _, p := range currentPs {
-        	name, err := p.Name()
-        	if err != nil || name == "" {
-        	    continue
-        	}
+    // 1. Mapeia todos os processos atuais sem travas de "len"
+    for _, p := range currentPs {
+        name, err := p.Name()
+        if err != nil || name == "" {
+            continue
+        }
 
-			namesThisRun[name] = true
+        namesThisRun[name] = true
 
-        	// 2. Se o NOME não estiver no cache global, é um software NOVO
-        	if !m.KnowProcessesByName[name] {
-        	    file, _ := p.Exe() // Só chama o Exe() se for um nome novo (mais rápido)
-            
-        	    if file != "" {
-        	        m.KnowProcessesByName[name] = true
-        	        
-        	        f := NewDProcess(name, file)
-        	        m.DProcesses[&f] = int(p.Pid)
+        // Se for um processo novo que não conhecemos
+        if !m.KnowProcessesByName[name] {
+            file, _ := p.Exe()
+            if file != "" {
+                m.KnowProcessesByName[name] = true
+                f := NewDProcess(name, file)
+                m.DProcesses[&f] = int(p.Pid)
                 
-        	        fmt.Printf("🚀 Novo Software: %s\n", name)
-        	        hasChanged = true
-        	    }
-        	}
+                fmt.Printf("🚀 Novo Software: %s\n", name)
+                hasChanged = true
+            }
+        }
 
-    	for name := range m.KnowProcessesByName {
-    	    if !namesThisRun[name] {
-    	        delete(m.KnowProcessesByName, name)
-    	        fmt.Printf("❌ Software Fechado: %s\n", name)
-    	        hasChanged = true
-    	    }
-    	}
-	}
-	if hasChanged {
-        fmt.Printf("Atualizado em: %s\n", time.Since(timeStart))
-    	}
-	}
-    return nil
+    }
+
+    // 2. Compara o que conhecíamos com o que rodou AGORA
+    for name := range m.KnowProcessesByName {
+        if !namesThisRun[name] {
+            delete(m.KnowProcessesByName, name)
+            fmt.Printf("❌ Software Fechado: %s\n", name)
+            hasChanged = true
+        }
+    }
+
+    if hasChanged {
+        m.RawLen = len(currentPs) // Atualiza o contador apenas para referência
+    }
+	fmt.Printf("Atualizado em: %s\n", time.Since(timeStart))
+    
+	return hasChanged, nil
 }
 
 func GetLiteralFromStruct(proc *DProcess) (*process.Process, error) {

@@ -4,6 +4,7 @@ import (
 	"decaffeinated/pkg/net"
 	"encoding/json"
 	"errors"
+	"log"
 )
 
 // IPCConfig carries IPC endpoint settings.
@@ -19,6 +20,9 @@ type IPCCommand struct {
 	IsBlocked        bool   `json:"is_blocked,omitempty"`
 }
 
+type CommandBundle struct {
+	Commands []IPCCommand
+}
 // IPCResponse is returned by the WatchDog IPC endpoint.
 type IPCResponse struct {
 	Status  string `json:"status"`
@@ -56,6 +60,7 @@ func (c *Client) SendCommand(cmd IPCCommand) (*IPCResponse, error) {
 	if err := json.Unmarshal(respBytes, &resp); err != nil {
 		return nil, err
 	}
+	log.Println(resp)
 	return &resp, nil
 }
 

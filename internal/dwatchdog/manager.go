@@ -39,6 +39,9 @@ type WatchDog struct {
 	RefreshInterval time.Duration
 	IPCConfig  hlnet.IPCConfig
 
+	TimeOnStart time.Time
+	TimeOnSession time.Time
+
 	ipcServer  *hlnet.Server
 }
 
@@ -64,6 +67,7 @@ func NewWatchDog(rules []Rule) *WatchDog {
 }
 
 func (w *WatchDog) Start() {
+	w.TimeOnSession = time.Now()
 	log.Println("Watchdog Iniciado")
 
 	if w.NetConfig != nil {
@@ -77,33 +81,37 @@ func (w *WatchDog) Start() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			err := w.Monitor.RefreshCurrentProcesses()
+			changed, err := w.Monitor.RefreshCurrentProcesses()
 			if err != nil {
 				log.Println("Erro ao atualizar processos:", err)
 				continue
 			}
+			if changed {
+				w.rulesMu.RLock()
+				for name, rule := range w.Rules {
+					if rule.IsBlocked {
+						w.KillProcess(name)
+						continue
+					}
 
-			w.rulesMu.RLock()
-			for name, rule := range w.Rules {
-				if rule.IsBlocked {
-					w.KillProcess(name)
-					continue
+					currentlyRunning := w.isAppRunning(name)
+					if currentlyRunning && !rule.active {
+						rule.limitControl.Toggle(true)
+						rule.active = true
+					} else if !currentlyRunning && rule.active {
+						rule.limitControl.Toggle(false)
+						rule.active = false
+					}
 				}
-
-				currentlyRunning := w.isAppRunning(name)
-				if currentlyRunning && !rule.active {
-					rule.limitControl.Toggle(true)
-					rule.active = true
-				} else if !currentlyRunning && rule.active {
-					rule.limitControl.Toggle(false)
-					rule.active = false
-				}
+				w.rulesMu.RUnlock()
 			}
-			w.rulesMu.RUnlock()
-		}
+	}
 	}()
 }
 
+func (w *WatchDog) checkTimeSinceStart(){
+
+}
 func (w *WatchDog) sendIPCResponse(c net.Conn, status string, message string) {
 	if c == nil {
 		return
