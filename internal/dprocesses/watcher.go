@@ -42,7 +42,6 @@ func NewDProcess(name string, filename string) DProcess{
 }
 
 func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
-    timeStart := time.Now()
     
     currentPs, err := process.Processes()
     if err != nil {
@@ -88,8 +87,7 @@ func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
     if hasChanged {
         m.RawLen = len(currentPs) // Atualiza o contador apenas para referência
     }
-	fmt.Printf("Atualizado em: %s\n", time.Since(timeStart))
-    
+	   
 	return hasChanged, nil
 }
 

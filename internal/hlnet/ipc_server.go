@@ -102,7 +102,8 @@ func (s *Server) handleConn(c net.Conn) {
 		writeResponse(c, IPCResponse{Status: "error", Message: "invalid json"})
 		return
 	}
-
+	
+	log.Println("received: " + cmd.Action + " for " + cmd.AppName)
 	resp, err := s.handler(cmd)
 	if err != nil {
 		resp = IPCResponse{Status: "error", Message: err.Error()}

@@ -5,6 +5,7 @@ package net
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -35,6 +36,7 @@ func ListenChannels(path string) (net.Listener, error) {
 		return nil, errors.New("path required")
 	}
 	_ = os.Remove(path)
+
 	return net.Listen("unix", path)
 }
 
@@ -55,7 +57,8 @@ func ReadChannels(path string) ([]byte, error) {
 	if path == "" {
 		return nil, errors.New("path required")
 	}
-	c, err := net.DialTimeout("unix", path, 2*time.Second)
+	c, err := net.DialTimeout("unix", path, 20* time.Second)
+	fmt.Println()
 	if err != nil {
 		return nil, err
 	}
@@ -67,15 +70,11 @@ func SendInChannels(path string, data []byte) ([]byte, error) {
 	if path == "" {
 		return nil, errors.New("path required")
 	}
-	c, err := net.DialTimeout("unix", path, 2*time.Second)
+	WriteInChannels(path ,data)
+	time.Sleep(2 * time.Second)
+	c, err := ReadChannels(path)
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-
-	_, err = c.Write(data)
-	if err != nil {
-		return nil, err
-	}
-	return io.ReadAll(c)
+	return c, nil
 }

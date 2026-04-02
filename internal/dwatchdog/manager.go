@@ -157,18 +157,19 @@ func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
 		rule.limitControl = dtime.NewLimit(rule.AppName, int(rule.TimeLimit.Seconds()), rule.Timestamps)
 		rule.limitControl.StartLimit()
 		w.Rules[cmd.AppName] = rule
-		return nil
 	}
 
 	// update existing rule
 	rule.TimeLimit = limit
 	rule.IsBlocked = cmd.IsBlocked
+
 	if cmd.Action == "block" {
 		rule.IsBlocked = true
 	} else if cmd.Action == "unblock" {
 		rule.IsBlocked = false
 	}
-
+	
+	w.Monitor.RefreshCurrentProcesses()
 	return nil
 }
 

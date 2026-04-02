@@ -4,7 +4,6 @@ import (
 	"decaffeinated/pkg/net"
 	"encoding/json"
 	"errors"
-	"log"
 )
 
 // IPCConfig carries IPC endpoint settings.
@@ -41,26 +40,20 @@ func NewClient(conf IPCConfig) (*Client, error) {
 	return &Client{conf: conf}, nil
 }
 
-func (c *Client) SendCommand(cmd IPCCommand) (*IPCResponse, error) {
+func (c *Client) SendCommand(cmd IPCCommand) error {
 	if c == nil || c.conf.Path == "" {
-		return nil, errors.New("invalid ipc client")
+		return errors.New("invalid ipc client")
 	}
 
 	payload, err := json.Marshal(cmd)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	respBytes, err := net.SendInChannels(c.conf.Path, payload)
+	err = net.WriteInChannels(c.conf.Path, payload)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-
-	var resp IPCResponse
-	if err := json.Unmarshal(respBytes, &resp); err != nil {
-		return nil, err
-	}
-	log.Println(resp)
-	return &resp, nil
+	return err
 }
 

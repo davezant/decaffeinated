@@ -18,7 +18,7 @@ import (
 
 var watchdogIPCPath string
 
-var servicesCmd = &cobra.Command{
+var watchdogCmd = &cobra.Command{
 	Use:   "watchdog",
 	Short: "Start the WatchDog with IPC enabled",
 	Long:  "Starts the WatchDog background monitor with IPC endpoint so clients can manage rules in real time.",
@@ -48,8 +48,12 @@ var servicesCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(servicesCmd)
-	servicesCmd.Flags().StringVar(&watchdogIPCPath, "ipc-path", "", "IPC socket/pipe path")
+var serviceInstallCmd = &cobra.Command{
+
 }
+
+func init() {
+	rootCmd.AddCommand(watchdogCmd)
+	watchdogCmd.Flags().StringVar(&watchdogIPCPath, "ipc-path", "", "IPC socket/pipe path")
+	}
 
