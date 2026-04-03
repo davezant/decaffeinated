@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 )
-
+var CurrentRules []dtime.CallbackTimestamp
 type Rule struct {
 	AppName      string
 	TimeLimit    time.Duration
@@ -69,6 +69,7 @@ func NewWatchDog(rules []Rule) *WatchDog {
 func (w *WatchDog) Start() {
 	w.TimeOnSession = time.Now()
 	log.Println("Watchdog Iniciado")
+	CurrentRules = NotifyOnlyTimestamps
 
 	if w.NetConfig != nil {
 		log.Println("Proxy Iniciado")
@@ -112,6 +113,7 @@ func (w *WatchDog) Start() {
 func (w *WatchDog) checkTimeSinceStart(){
 
 }
+
 func (w *WatchDog) sendIPCResponse(c net.Conn, status string, message string) {
 	if c == nil {
 		return
@@ -130,7 +132,7 @@ func (w *WatchDog) sendIPCResponse(c net.Conn, status string, message string) {
 	}
 }
 
-func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
+func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand, setOfRules []dtime.CallbackTimestamp) error {
 	if cmd.AppName == "" {
 		return errors.New("app_name is required")
 	}
@@ -154,7 +156,7 @@ func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
 
 	if !exists {
 		rule = &Rule{AppName: cmd.AppName, TimeLimit: limit, IsBlocked: cmd.IsBlocked}
-		rule.limitControl = dtime.NewLimit(rule.AppName, int(rule.TimeLimit.Seconds()), rule.Timestamps)
+		rule.limitControl = dtime.NewLimit(rule.AppName, int(rule.TimeLimit.Seconds()), setOfRules)
 		rule.limitControl.StartLimit()
 		w.Rules[cmd.AppName] = rule
 	}
@@ -163,10 +165,11 @@ func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand) error {
 	rule.TimeLimit = limit
 	rule.IsBlocked = cmd.IsBlocked
 
-	if cmd.Action == "block" {
-		rule.IsBlocked = true
-	} else if cmd.Action == "unblock" {
-		rule.IsBlocked = false
+	switch cmd.Action{
+		case "block":
+			rule.IsBlocked = true
+		case "unblock":
+			rule.IsBlocked = false
 	}
 	
 	w.Monitor.RefreshCurrentProcesses()
@@ -187,7 +190,7 @@ func (w *WatchDog) handleIPCConn(c net.Conn) {
 		return
 	}
 
-	if err := w.applyIPCCommand(cmd); err != nil {
+	if err := w.applyIPCCommand(cmd, CurrentRules); err != nil {
 		w.sendIPCResponse(c, "error", err.Error())
 		return
 	}
@@ -204,7 +207,7 @@ func (w *WatchDog) StartIPC() error {
 	}
 
 	handler := func(cmd hlnet.IPCCommand) (hlnet.IPCResponse, error) {
-		if err := w.applyIPCCommand(cmd); err != nil {
+		if err := w.applyIPCCommand(cmd, CurrentRules); err != nil {
 			return hlnet.IPCResponse{Status: "error", Message: err.Error()}, nil
 		}
 		return hlnet.IPCResponse{Status: "ok", Message: "command applied"}, nil

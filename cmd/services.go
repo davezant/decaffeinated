@@ -1,59 +1,107 @@
-/*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
-	"context"
+	"decaffeinated/internal/ddaemon"
 	"decaffeinated/internal/dwatchdog"
-	"decaffeinated/internal/hlnet"
-	"errors"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+
 	"github.com/spf13/cobra"
 )
 
-var watchdogIPCPath string
+// Helper to get a manager instance with your app's specific config
+func getManager() (*ddaemon.DaemonManager, error) {
+    // This is the function that actually runs when the service starts
+    watchdogLogic := func() {
+        // Start your IPC server here
+        // hlnet.StartServer(...) 
+    }
 
-var watchdogCmd = &cobra.Command{
-	Use:   "watchdog",
-	Short: "Start the WatchDog with IPC enabled",
-	Long:  "Starts the WatchDog background monitor with IPC endpoint so clients can manage rules in real time.",
+    return ddaemon.NewDaemonManager(
+        "decaffeinated",
+        "Decaffeinated Watchdog",
+        "Monitors application usage and handles IPC requests.",
+        watchdogLogic,
+    )
+}
+
+var startCmd = &cobra.Command{
+	Use: "start",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if watchdogIPCPath == "" {
-			return errors.New("--ipc-path is required")
-		}
-
 		wd := dwatchdog.NewWatchDog(nil)
-		wd.IPCConfig = hlnet.IPCConfig{Path: watchdogIPCPath}
-
-		if err := wd.StartIPC(); err != nil {
-			return fmt.Errorf("failed to start IPC server: %w", err)
-		}
-		defer wd.StopIPC()
-
 		wd.Start()
-
-		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		defer stop()
-
-		fmt.Printf("WatchDog started (ipc=%s). Press Ctrl-C to stop.\n", watchdogIPCPath)
-		<-ctx.Done()
-
-		fmt.Println("Shutting down WatchDog...")
-		return wd.StopIPC()
+		wd.IPCConfig.Path = "/tmp/deca-sock"
+		wd.StartIPC()
+		select {}
+		return nil
+	},
+}
+var serviceInstallCmd = &cobra.Command{
+	Use:   "install",
+	Short: "Install the watchdog as a system service or windows task",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dm, err := getManager()
+		if err != nil {
+			return err
+		}
+		err = dm.InstallService()
+		if err == nil {
+			fmt.Println("Service installed successfully.")
+		}
+		return err
 	},
 }
 
-var serviceInstallCmd = &cobra.Command{
+var serviceUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Uninstall the watchdog service",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dm, err := getManager()
+		if err != nil {
+			return err
+		}
+		err = dm.UninstallService()
+		if err == nil {
+			fmt.Println("Service uninstalled successfully.")
+		}
+		return err
+	},
+}
 
+var serviceStartCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start the watchdog service",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dm, err := getManager()
+		if err != nil {
+			return err
+		}
+		return dm.StartService()
+	},
+}
+
+var serviceStopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop the watchdog service",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dm, err := getManager()
+		if err != nil {
+			return err
+		}
+		return dm.StopService()
+	},
 }
 
 func init() {
-	rootCmd.AddCommand(watchdogCmd)
-	watchdogCmd.Flags().StringVar(&watchdogIPCPath, "ipc-path", "", "IPC socket/pipe path")
+	// You can group these under a "service" parent command
+	var serviceCmd = &cobra.Command{
+		Use:   "service",
+		Short: "Manage the background watchdog service",
 	}
 
+	rootCmd.AddCommand(serviceCmd)
+	rootCmd.AddCommand(startCmd)
+	serviceCmd.AddCommand(serviceInstallCmd)
+	serviceCmd.AddCommand(serviceUninstallCmd)
+	serviceCmd.AddCommand(serviceStartCmd)
+	serviceCmd.AddCommand(serviceStopCmd)
+}
