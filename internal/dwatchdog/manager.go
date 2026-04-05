@@ -4,36 +4,32 @@ import (
 	"decaffeinated/internal/dprocesses"
 	"decaffeinated/internal/dtime"
 	"decaffeinated/internal/hlnet"
-	"encoding/json"
-	"errors"
-	"io"
 	"log"
-	"net"
 	"sync"
 	"time"
 )
-var CurrentRules []dtime.CallbackTimestamp
+
+// Structs 
+
+// Rules are
 type Rule struct {
-	AppName      string
+	RuleName	 string
+	AppNames     []string
 	TimeLimit    time.Duration
 	IsBlocked    bool
 	Timestamps   []dtime.CallbackTimestamp
-	OnLimitReach func()
 
-	limitControl *dtime.DLimit
+	limitControl dtime.DLimit
 	active       bool
 }
 
-type IPCCommand struct {
-	Action          string `json:"action"`
-	AppName         string `json:"app_name"`
-	TimeLimitSeconds int64  `json:"time_limit_seconds,omitempty"`
-	IsBlocked       bool   `json:"is_blocked,omitempty"`
-}
-
-type WatchDog struct {
-	Rules      map[string]*Rule
+// Watchdog
+type Watchdog struct {
+	CurrentUser string
+	
+	Rules      []Rule
 	rulesMu    sync.RWMutex
+	
 	NetConfig  *NetConfig
 	Monitor    dprocesses.Monitor
 	RefreshInterval time.Duration
@@ -45,204 +41,83 @@ type WatchDog struct {
 	ipcServer  *hlnet.Server
 }
 
-func NewWatchDog(rules []Rule) *WatchDog {
-	ruleMap := make(map[string]*Rule)
-	
-	for i := range rules {
-		r := &rules[i]
-		r.limitControl = dtime.NewLimit(
-			r.AppName, 
-			int(r.TimeLimit.Seconds()), 
-			r.Timestamps,
-		)
-		r.limitControl.StartLimit()
-		ruleMap[r.AppName] = r
-	}
-
-	return &WatchDog{
-		Rules:           ruleMap,
-		Monitor:         dprocesses.NewMonitor(),
-		RefreshInterval: time.Second,
+func NewRule(name string, appName []string, isBlocked bool, timeLimit time.Duration, timestamps []dtime.CallbackTimestamp) Rule{
+	return Rule{
+		RuleName: name,
+		AppNames: appName,
+		TimeLimit: timeLimit * time.Second,
+		Timestamps: timestamps,
+		IsBlocked: isBlocked,
 	}
 }
 
-func (w *WatchDog) Start() {
+// Watchdog
+
+// Create a Watchdog
+func NewWatchog(refreshIntervalInSeconds int) *Watchdog {
+
+	return &Watchdog{
+		Monitor:         dprocesses.NewMonitor(),
+		RefreshInterval: time.Duration(refreshIntervalInSeconds) * time.Second,
+	}
+}
+
+func (w *Watchdog) Start() {
 	w.TimeOnSession = time.Now()
-	log.Println("Watchdog Iniciado")
-	CurrentRules = NotifyOnlyTimestamps
+	log.Println("Watchdog: Started")
 
 	if w.NetConfig != nil {
-		log.Println("Proxy Iniciado")
-		// Proxy Iniciar
+		log.Println("Proxy: Started")
 		// TODO
-		// defer fechar
 	}
-	go func() {
-		ticker := time.NewTicker(5 * w.RefreshInterval)
+	go func(){
+		ticker := time.NewTicker(w.RefreshInterval)
 		defer ticker.Stop()
-
 		for range ticker.C {
 			changed, err := w.Monitor.RefreshCurrentProcesses()
 			if err != nil {
-				log.Println("Erro ao atualizar processos:", err)
+				log.Println("error updating processes:", err)
 				continue
 			}
+
 			if changed {
 				w.rulesMu.RLock()
-				for name, rule := range w.Rules {
-					if rule.IsBlocked {
-						w.KillProcess(name)
-						continue
-					}
+					for _, rule := range w.Rules {
+						for _, apps := range rule.AppNames{
+						if rule.IsBlocked {
+							w.KillProcess(apps)
+							continue
+						}
 
-					currentlyRunning := w.isAppRunning(name)
-					if currentlyRunning && !rule.active {
-						rule.limitControl.Toggle(true)
-						rule.active = true
-					} else if !currentlyRunning && rule.active {
-						rule.limitControl.Toggle(false)
-						rule.active = false
+						currentlyRunning := w.isAppRunning(apps)
+						if currentlyRunning && !rule.active {
+							rule.limitControl.Toggle(true)
+							rule.active = true
+						} else if !currentlyRunning && rule.active {
+							rule.limitControl.Toggle(false)
+							rule.active = false
+						}
 					}
+					w.rulesMu.RUnlock()
 				}
-				w.rulesMu.RUnlock()
 			}
-	}
+		}
 	}()
 }
 
-func (w *WatchDog) checkTimeSinceStart(){
-
+func (w *Watchdog) checkTimeSinceStart() time.Duration {
+	return time.Since(w.TimeOnStart)
 }
 
-func (w *WatchDog) sendIPCResponse(c net.Conn, status string, message string) {
-	if c == nil {
-		return
-	}
-
-	resp := hlnet.IPCResponse{Status: status, Message: message}
-	payload, err := json.Marshal(resp)
-	if err != nil {
-		log.Println("sendIPCResponse marshal error:", err)
-		return
-	}
-
-	_, err = c.Write(payload)
-	if err != nil {
-		log.Println("sendIPCResponse write error:", err)
-	}
-}
-
-func (w *WatchDog) applyIPCCommand(cmd hlnet.IPCCommand, setOfRules []dtime.CallbackTimestamp) error {
-	if cmd.AppName == "" {
-		return errors.New("app_name is required")
-	}
-
-	w.rulesMu.Lock()
-	defer w.rulesMu.Unlock()
-
-	rule, exists := w.Rules[cmd.AppName]
-	if cmd.Action == "remove" {
-		if !exists {
-			return errors.New("rule not found")
-		}
-		delete(w.Rules, cmd.AppName)
-		return nil
-	}
-
-	limit := time.Duration(cmd.TimeLimitSeconds) * time.Second
-	if limit == 0 {
-		limit = time.Second
-	}
-
-	if !exists {
-		rule = &Rule{AppName: cmd.AppName, TimeLimit: limit, IsBlocked: cmd.IsBlocked}
-		rule.limitControl = dtime.NewLimit(rule.AppName, int(rule.TimeLimit.Seconds()), setOfRules)
-		rule.limitControl.StartLimit()
-		w.Rules[cmd.AppName] = rule
-	}
-
-	// update existing rule
-	rule.TimeLimit = limit
-	rule.IsBlocked = cmd.IsBlocked
-
-	switch cmd.Action{
-		case "block":
-			rule.IsBlocked = true
-		case "unblock":
-			rule.IsBlocked = false
-	}
-	
-	w.Monitor.RefreshCurrentProcesses()
-	return nil
-}
-
-func (w *WatchDog) handleIPCConn(c net.Conn) {
-	defer c.Close()
-	body, err := io.ReadAll(c)
-	if err != nil {
-		w.sendIPCResponse(c, "error", "failed reading command")
-		return
-	}
-
-	var cmd hlnet.IPCCommand
-	if err := json.Unmarshal(body, &cmd); err != nil {
-		w.sendIPCResponse(c, "error", "invalid json")
-		return
-	}
-
-	if err := w.applyIPCCommand(cmd, CurrentRules); err != nil {
-		w.sendIPCResponse(c, "error", err.Error())
-		return
-	}
-
-	w.sendIPCResponse(c, "ok", "command applied")
-}
-
-func (w *WatchDog) StartIPC() error {
-	if w.IPCConfig.Path == "" {
-		return errors.New("IPCPath required")
-	}
-	if w.ipcServer != nil {
-		return errors.New("IPC already started")
-	}
-
-	handler := func(cmd hlnet.IPCCommand) (hlnet.IPCResponse, error) {
-		if err := w.applyIPCCommand(cmd, CurrentRules); err != nil {
-			return hlnet.IPCResponse{Status: "error", Message: err.Error()}, nil
-		}
-		return hlnet.IPCResponse{Status: "ok", Message: "command applied"}, nil
-	}
-
-	server, err := hlnet.NewServer(w.IPCConfig, handler)
-	if err != nil {
-		return err
-	}
-
-	if err := server.Start(); err != nil {
-		return err
-	}
-
-	w.ipcServer = server
-	return nil
-}
-
-func (w *WatchDog) StopIPC() error {
-	if w.ipcServer == nil {
-		return nil
-	}
-	return w.ipcServer.Stop()
-}
-
-func (w *WatchDog) isAppRunning(name string) bool {
+func (w *Watchdog) isAppRunning(name string) bool {
 	state, _ := dprocesses.GetStateByName(name)
 	return state
 }
 
-func (w *WatchDog) KillProcess(name string) {
+func (w *Watchdog) KillProcess(name string) {
 	for c := range w.Monitor.DProcesses{
 		if c.Name == name {
 			dprocesses.KillProcessByName(name)
 		}
 	}
 }
-

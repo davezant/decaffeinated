@@ -6,22 +6,39 @@ import (
 	"errors"
 )
 
-// IPCConfig carries IPC endpoint settings.
+const (
+	DefaultLinuxSockPath = `/tmp/decaffeinated-socket`
+	DefaultWindowsPipePath = `\\.\pipe\decaffeinated`
+)
+
 type IPCConfig struct {
 	Path string
 }
 
-// IPCCommand is synced with WatchDog IPC command format.
 type IPCCommand struct {
 	Action           string `json:"action"`
-	AppName          string `json:"app_name"`
+	AppNames          []string `json:"app_names"`
+	Category		 string `json:"category"`
 	TimeLimitSeconds int64  `json:"time_limit_seconds,omitempty"`
 	IsBlocked        bool   `json:"is_blocked,omitempty"`
+	CustomTimestamps []CustomTimestamp `json:"rule,omitempty"`
+}
+ 
+type CustomTimestamp struct {
+	Timestamp float32 `json:"timestamp"`
+	Callback  string  `json:"callback"`
 }
 
 type CommandBundle struct {
 	Commands []IPCCommand
 }
+
+// Heartbeat for external User control.
+type Heartbeat struct {
+	UserUUID string `json:"UUID"`
+	TimeLimitSeconds int64 `json:"time_limit_seconds,omitempty"`
+}
+
 // IPCResponse is returned by the WatchDog IPC endpoint.
 type IPCResponse struct {
 	Status  string `json:"status"`
@@ -54,6 +71,10 @@ func (c *Client) SendCommand(cmd IPCCommand) error {
 	if err != nil {
 		return nil
 	}
+	// TODO WAIT UNTIL HEAR
 	return err
 }
 
+func (c *Client) WaitUntilResponse(){
+
+}

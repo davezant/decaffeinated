@@ -98,15 +98,36 @@ func (d *DTimer) StopTimer() {
 	d.Done <- true
 }
 
-func NewLimit(name string, totalSeconds int, callbacks []CallbackTimestamp) *DLimit {
-	return &DLimit{
+func NewLimit(name string, totalSeconds int) DLimit {
+	return DLimit{
 		LimitName:      name,
 		TargetDuration: time.Duration(totalSeconds) * time.Second,
-		Timestamps:     callbacks,
 		Done:           make(chan bool, 1),
 		Control:        make(chan bool),
 	}
 }
+
+func (d DLimit) SetCallbackTimestamps(timestamps []CallbackTimestamp){
+	log.Println("setting new timestamps")
+	d.Timestamps = timestamps
+}
+
+func (d DLimit) CreateTimestamp(timestamp float32, callback func()){
+	d.Timestamps = append(d.Timestamps, CallbackTimestamp{Timestamp:timestamp, Callback: callback})
+}
+
+func (d DLimit) RemoveTimestamp(timestamp float32){
+	var newCallbackTimestamp []CallbackTimestamp
+	for _, dt := range d.Timestamps{
+		if dt.Timestamp == timestamp{
+			continue
+		} else {
+			newCallbackTimestamp = append(newCallbackTimestamp, dt)
+		}
+	}
+	d.SetCallbackTimestamps(newCallbackTimestamp)
+}
+
 
 func (d *DLimit) StartLimit() {
 	ticker := time.NewTicker(1 * time.Second)

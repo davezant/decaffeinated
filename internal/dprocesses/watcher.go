@@ -1,7 +1,6 @@
 package dprocesses
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
@@ -10,19 +9,17 @@ import (
 
 // Raw Process Management
 
+
 type DProcess struct {
 	Name string
 	Filename string
-	OpenTime time.Time
-
-	context context.Context
 } 
 
 type Monitor struct {
 	BootTime time.Time
 	DProcesses map[*DProcess]int
 	KnowProcessesByName map[string]bool
-	RawLen int
+	LenOfProcesses int
 }
 
 func NewMonitor() Monitor {
@@ -30,7 +27,7 @@ func NewMonitor() Monitor {
 		BootTime: time.Now(),
 		KnowProcessesByName: make(map[string]bool),
 		DProcesses: make(map[*DProcess]int),
-		RawLen: 0,
+		LenOfProcesses: 0,
 	}
 }
 
@@ -41,8 +38,11 @@ func NewDProcess(name string, filename string) DProcess{
 	}
 }
 
+/*
+	RefreshCurrentProcesses refreshes the bucket of processes then
+	returns if it changed or no.
+*/
 func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
-    
     currentPs, err := process.Processes()
     if err != nil {
         return false, err
@@ -51,7 +51,6 @@ func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
     namesThisRun := make(map[string]bool)
     hasChanged := false
 
-    // 1. Mapeia todos os processos atuais sem travas de "len"
     for _, p := range currentPs {
         name, err := p.Name()
         if err != nil || name == "" {
@@ -60,7 +59,6 @@ func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
 
         namesThisRun[name] = true
 
-        // Se for um processo novo que não conhecemos
         if !m.KnowProcessesByName[name] {
             file, _ := p.Exe()
             if file != "" {
@@ -68,30 +66,32 @@ func (m *Monitor) RefreshCurrentProcesses() (bool, error) {
                 f := NewDProcess(name, file)
                 m.DProcesses[&f] = int(p.Pid)
                 
-                fmt.Printf("🚀 Novo Software: %s\n", name)
+                fmt.Printf("New Software: %s\n", name)
                 hasChanged = true
             }
         }
 
     }
 
-    // 2. Compara o que conhecíamos com o que rodou AGORA
     for name := range m.KnowProcessesByName {
         if !namesThisRun[name] {
             delete(m.KnowProcessesByName, name)
-            fmt.Printf("❌ Software Fechado: %s\n", name)
+            fmt.Printf("Software Closed: %s\n", name)
             hasChanged = true
         }
     }
 
     if hasChanged {
-        m.RawLen = len(currentPs) // Atualiza o contador apenas para referência
+        m.LenOfProcesses = len(currentPs) 
     }
 	   
 	return hasChanged, nil
 }
 
-func GetLiteralFromStruct(proc *DProcess) (*process.Process, error) {
+func GetLiteralFromProcessStruct(proc *DProcess) (*process.Process, error) {
+	/*
+		Get literal from High Level Process 
+	*/
 	ps, err := process.Processes()
 	for _, p := range ps {
 		name, _ := p.Name()
@@ -105,7 +105,7 @@ func GetLiteralFromStruct(proc *DProcess) (*process.Process, error) {
 
 func GetState(proc *DProcess) (bool, error) {
 	var err error
-	literal, err := GetLiteralFromStruct(proc)
+	literal, err := GetLiteralFromProcessStruct(proc)
 	if err != nil {
 		return literal.IsRunning()
 	}
