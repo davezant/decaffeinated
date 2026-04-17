@@ -31,7 +31,6 @@ type Watchdog struct {
 	Rules      []Rule
 	rulesMu    sync.RWMutex
 	
-	NetConfig  *NetConfig
 	Monitor    dprocesses.Monitor
 	RefreshInterval time.Duration
 	IPCConfig  hlnet.IPCConfig
@@ -78,10 +77,6 @@ func (w *Watchdog) Start() {
 	w.TimeOnSession = time.Now()
 	log.Println("Watchdog: Started")
 
-	if w.NetConfig != nil {
-		log.Println("Proxy: Started")
-		// TODO
-	}
 	go func(){
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
