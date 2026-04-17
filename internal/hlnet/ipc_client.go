@@ -1,51 +1,13 @@
 ﻿package hlnet
 
 import (
-	"decaffeinated/pkg/net"
+	"net"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 )
 
-const (
-	DefaultLinuxSockPath = `/tmp/decaffeinated-socket`
-	DefaultWindowsPipePath = `\\.\pipe\decaffeinated`
-)
-
-type IPCConfig struct {
-	Path string
-}
-
-type IPCCommand struct {
-	Action           string `json:"action"`
-	AppNames          []string `json:"app_names"`
-	Category		 string `json:"category"`
-	TimeLimitSeconds int64  `json:"time_limit_seconds,omitempty"`
-	IsBlocked        bool   `json:"is_blocked,omitempty"`
-	CustomTimestamps []CustomTimestamp `json:"rule,omitempty"`
-}
- 
-type CustomTimestamp struct {
-	Timestamp float32 `json:"timestamp"`
-	Callback  string  `json:"callback"`
-}
-
-type CommandBundle struct {
-	Commands []IPCCommand
-}
-
-// Heartbeat for external User control.
-type Heartbeat struct {
-	UserUUID string `json:"UUID"`
-	TimeLimitSeconds int64 `json:"time_limit_seconds,omitempty"`
-}
-
-// IPCResponse is returned by the WatchDog IPC endpoint.
-type IPCResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
-// Client holds IPC destination information.
 type Client struct {
 	conf IPCConfig
 }
@@ -57,24 +19,24 @@ func NewClient(conf IPCConfig) (*Client, error) {
 	return &Client{conf: conf}, nil
 }
 
-func (c *Client) SendCommand(cmd IPCCommand) error {
-	if c == nil || c.conf.Path == "" {
-		return errors.New("invalid ipc client")
-	}
+func (c *Client) SendCommand(cmd IPCCommand) (IPCResponse, error) {
 
-	payload, err := json.Marshal(cmd)
-	if err != nil {
-		return nil
-	}
+    conn, err := net.DialTimeout("unix", c.conf.Path, 5*time.Second)
+    if err != nil {
+        return IPCResponse{}, fmt.Errorf("failed to connect to watchdog: %w", err)
+    }
+    defer conn.Close()
 
-	err = net.WriteInChannels(c.conf.Path, payload)
-	if err != nil {
-		return nil
-	}
-	// TODO WAIT UNTIL HEAR
-	return err
+    if err := json.NewEncoder(conn).Encode(cmd); err != nil {
+        return IPCResponse{}, fmt.Errorf("failed to encode command: %w", err)
+    }
+
+    var resp IPCResponse
+    if err := json.NewDecoder(conn).Decode(&resp); err != nil {
+        return IPCResponse{}, fmt.Errorf("failed to decode response: %w", err)
+    }
+
+    return resp, nil
 }
 
-func (c *Client) WaitUntilResponse(){
 
-}

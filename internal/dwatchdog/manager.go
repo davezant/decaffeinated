@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 	"time"
+	"fmt"
 )
 
 // Structs 
@@ -37,17 +38,28 @@ type Watchdog struct {
 
 	TimeOnStart time.Time
 	TimeOnSession time.Time
-
+	
 	ipcServer  *hlnet.Server
+
+	AvailableCallbacks map[string]func(string)
 }
 
-func NewRule(name string, appName []string, isBlocked bool, timeLimit time.Duration, timestamps []dtime.CallbackTimestamp) Rule{
+func NewRule(name string, appNames []string, isBlocked bool, timeLimit time.Duration, timestamps []dtime.CallbackTimestamp) Rule {
+	// Inicializa o controle de limite de tempo
+	limit := dtime.NewLimit(name, int(timeLimit.Seconds()))
+	limit.SetCallbackTimestamps(timestamps)
+	
+	// Se a regra já deve começar ativa/bloqueada, você decide se inicia o timer aqui
+	limit.StartLimit() 
+
 	return Rule{
-		RuleName: name,
-		AppNames: appName,
-		TimeLimit: timeLimit * time.Second,
-		Timestamps: timestamps,
-		IsBlocked: isBlocked,
+		RuleName:     name,
+		AppNames:     appNames,
+		TimeLimit:    timeLimit,
+		IsBlocked:    isBlocked,
+		Timestamps:   timestamps,
+		limitControl: limit,
+		active:       false,
 	}
 }
 
@@ -71,7 +83,7 @@ func (w *Watchdog) Start() {
 		// TODO
 	}
 	go func(){
-		ticker := time.NewTicker(w.RefreshInterval)
+		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
 			changed, err := w.Monitor.RefreshCurrentProcesses()
@@ -81,8 +93,8 @@ func (w *Watchdog) Start() {
 			}
 
 			if changed {
-				w.rulesMu.RLock()
 					for _, rule := range w.Rules {
+						fmt.Println("executing rule"+rule.RuleName)
 						for _, apps := range rule.AppNames{
 						if rule.IsBlocked {
 							w.KillProcess(apps)
@@ -98,11 +110,31 @@ func (w *Watchdog) Start() {
 							rule.active = false
 						}
 					}
-					w.rulesMu.RUnlock()
 				}
 			}
 		}
 	}()
+}
+
+func (w *Watchdog) handleCallback(category string, callbackName string) {
+	log.Printf("[CALLBACK] Rule: %s, Action: %s", category, callbackName)
+	
+	switch callbackName {
+	case "notify":
+		fmt.Printf("ALERTA: Você atingiu um marco na categoria %s!\n", category)
+	case "kill_all":
+		w.rulesMu.RLock()
+		for _, r := range w.Rules {
+			if r.RuleName == category {
+				for _, app := range r.AppNames {
+					w.KillProcess(app)
+				}
+			}
+		}
+		w.rulesMu.RUnlock()
+	default:
+		log.Printf("Callback %s não implementado", callbackName)
+	}
 }
 
 func (w *Watchdog) checkTimeSinceStart() time.Duration {
