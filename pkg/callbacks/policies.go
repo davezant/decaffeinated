@@ -8,12 +8,9 @@ import (
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
-func InterpretateCallbacksString(command string){
-
-}
-
-// Callbacks
-
+var (
+	
+)
 func QuickPopup() {
 	beeep.Alert("Decaffeinated", "", nil)
 }
